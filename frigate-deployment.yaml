@@ -39,12 +39,13 @@ spec:
           privileged: true
         env:
         - name: FRIGATE_RTSP_USER
-          value: "admin"
+          value: "K3s"
         - name: FRIGATE_RTSP_PASSWORD
           valueFrom:
             secretKeyRef:
               name: frigate-password
               key: FRIGATE_RTSP_PASSWORD
+                #verify newline ($) is not present at the end of the passwor with: kubectl get secret frigate-password -o jsonpath="{.data.FRIGATE_RTSP_PASSWORD}" | base64 -d | cat -A
         ports:
         - name: tcp-port 
           protocol: TCP

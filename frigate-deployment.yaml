@@ -1,0 +1,90 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frigate
+  labels:
+    app: frigate
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frigate 
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: frigate 
+    spec:
+      tolerations:
+      - key: "tpu"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: "tpu"
+                operator: In
+                values:
+                - "true"
+      containers:
+      - name: frigate 
+        image: ghcr.io/blakeblackshear/frigate:stable
+        imagePullPolicy: "IfNotPresent"
+        securityContext:
+          privileged: true
+        env:
+        - name: FRIGATE_RTSP_USER
+          value: "admin"
+        - name: FRIGATE_RTSP_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: frigate-password
+              key: FRIGATE_RTSP_PASSWORD
+        ports:
+        - name: tcp-port 
+          protocol: TCP
+          containerPort: 5050
+        - name: rtsp-port 
+          protocol: SCTP
+          containerPort: 8554
+        - name: webrtc-tcp-port 
+          containerPort: 8555
+          protocol: TCP
+        - name: webrtc-upd-port
+          containerPort: 8555
+          protocol: UDP
+        volumeMounts:
+        - name: k8s-pv02
+          mountPath: /config
+          subPath: frigate/config
+        - name: k8s-pv02
+          mountPath: /media
+          subPath: frigate/media
+        - name: k8s-pv02
+          mountPath: /log
+          subPath: frigate/log
+        - name: tmp 
+          mountPath: /tmp/cache
+        - name: dshm 
+          mountPath: /dev/shm
+        resources:
+          requests:
+            memory: "1Gi"
+            ephemeral-storage: "1Gi"
+      volumes:
+      - name: k8s-pv02 
+        persistentVolumeClaim:
+          claimName: synology-k8s-pv02
+      - name: tmp 
+        emptyDir:
+          medium: Memory
+          sizeLimit: 1.1Gi
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 1.1Gi

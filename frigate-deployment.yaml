@@ -17,27 +17,27 @@ spec:
       labels:
         app: frigate 
     spec:
-      tolerations:
-      - key: "tpu"
-        operator: "Equal"
-        value: "true"
-        effect: "NoSchedule"
+      runtimeClassName: nvidia
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: "tpu"
+              - key: "gpu"
                 operator: In
                 values:
                 - "true"
       containers:
       - name: frigate 
-        image: ghcr.io/blakeblackshear/frigate:stable
+        image: ghcr.io/blakeblackshear/frigate:stable-tensorrt
         imagePullPolicy: "IfNotPresent"
         securityContext:
           privileged: true
         env:
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: all
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: compute,utility,video
         - name: FRIGATE_RTSP_USER
           value: "K3s"
         - name: FRIGATE_RTSP_PASSWORD
